@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WORLD HEALTH RADAR AI</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:#07111f;
+  color:#eaf4ff;
+  min-height:100vh
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:#0b1b2e;
+  border-bottom:1px solid #173552;
+  padding:14px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px
+}
+
+.logo{
+  font-size:20px;
+  font-weight:800;
+  color:#62d9ff
+}
+
+.status{
+  font-size:13px;
+  padding:7px 11px;
+  border-radius:20px;
+  background:#122a3f
+}
+
+nav{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:10px;
+  background:#091728;
+  border-bottom:1px solid #173552
+}
+
+nav button{
+  flex:0 0 auto;
+  border:1px solid #1b3a57;
+  background:#0d2137;
+  color:#bcd3e8;
+  border-radius:9px;
+  padding:9px 13px;
+  cursor:pointer
+}
+
+nav button.active,
+nav button:hover{
+  background:#12405c;
+  color:#fff
+}
+
+main{
+  max-width:1250px;
+  margin:auto;
+  padding:18px
+}
+
+.page{display:none}
+.page.active{display:block}
+
+.hero{
+  padding:22px;
+  border:1px solid #173552;
+  border-radius:16px;
+  background:linear-gradient(145deg,#0b2035,#091827);
+  margin-bottom:18px
+}
+
+.hero h1{
+  font-size:clamp(25px,5vw,42px);
+  margin-bottom:8px
+}
+
+.hero p{
+  color:#9fb8cf;
+  line-height:1.6
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+  margin-bottom:18px
+}
+
+.card{
+  background:#0b1c2e;
+  border:1px solid #173552;
+  border-radius:14px;
+  padding:17px
+}
+
+.stat{
+  font-size:29px;
+  font-weight:800;
+  color:#61dcff;
+  margin-top:8px
+}
+
+.label{
+  font-size:13px;
+  color:#8ea8bd
+}
+
+.section-title{
+  margin:20px 0 12px
+}
+
+.toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:9px;
+  margin-bottom:15px
+}
+
+input,select{
+  background:#081726;
+  color:#eaf4ff;
+  border:1px solid #234663;
+  border-radius:9px;
+  padding:11px;
+  outline:none
+}
+
+input{
+  flex:1;
+  min-width:210px
+}
+
+button.primary{
+  background:#0d789f;
+  color:white;
+  border:0;
+  border-radius:9px;
+  padding:10px 14px;
+  cursor:pointer
+}
+
+.alert{
+  padding:14px;
+  border-radius:11px;
+  margin-bottom:15px;
+  border:1px solid #234663
+}
+
+.alert.error{
+  background:#351923;
+  border-color:#8f3347
+}
+
+.alert.ok{
+  background:#0d3027;
+  border-color:#22775e
+}
+
+.alert.new{
+  background:#102f24;
+  border-color:#25a36f
+}
+
+.event{
+  background:#0b1c2e;
+  border:1px solid #173552;
+  border-radius:13px;
+  padding:16px;
+  margin-bottom:12px
+}
+
+.event.new-event{
+  border-color:#25a36f;
+  box-shadow:0 0 12px rgba(37,163,111,.15)
+}
+
+.event h3{
+  font-size:17px;
+  margin-bottom:8px;
+  color:#fff
+}
+
+.event .meta{
+  font-size:12px;
+  color:#71d8ff;
+  margin-bottom:9px
+}
+
+.event p{
+  color:#b5c8d8;
+  line-height:1.55
+}
+
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:15px;
+  background:#15334b;
+  color:#8fe4ff;
+  font-size:11px;
+  margin:3px 3px 0 0
+}
+
+.badge.new{
+  background:#145c35;
+  color:#8affb5
+}
+
+#map{
+  height:520px;
+  border-radius:14px;
+  border:1px solid #173552
+}
+
+.chartbox{
+  height:350px
+}
+
+.small{
+  font-size:12px;
+  color:#8ea8bd;
+  line-height:1.5
+}
+
+footer{
+  text-align:center;
+  color:#6f879b;
+  padding:30px 10px
+}
+
+.monitor{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:#9fb8cf;
+  margin-top:8px
+}
+
+.pulse{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#39e58c;
+  box-shadow:0 0 0 0 rgba(57,229,140,.7);
+  animation:pulse 1.8s infinite
+}
+
+@keyframes pulse{
+  0%{
+    box-shadow:0 0 0 0 rgba(57,229,140,.7)
+  }
+  70%{
+    box-shadow:0 0 0 9px rgba(57,229,140,0)
+  }
+  100%{
+    box-shadow:0 0 0 0 rgba(57,229,140,0)
+  }
+}
+
+@media(max-width:600px){
+  main{padding:12px}
+
+  header{padding:12px}
+
+  .logo{font-size:17px}
+
+  #map{height:430px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">🌍 WORLD HEALTH RADAR AI</div>
+
+  <div id="status" class="status">
+    🟡 Connexion OMS...
+  </div>
+</header>
+
+<nav>
+  <button class="active" data-page="home">Accueil</button>
+  <button data-page="mapPage">Carte</button>
+  <button data-page="alerts">Alertes</button>
+  <button data-page="ai">IA</button>
+  <button data-page="stats">Stats</button>
+  <button data-page="settings">Paramètres</button>
+</nav>
+
+<main>
+
+<section id="home" class="page active">
+
+  <div class="hero">
+
+    <h1>Surveillance sanitaire mondiale</h1>
+
+    <p>
+      Tableau de bord expérimental utilisant les informations publiées par
+      l'Organisation mondiale de la Santé (OMS) pour explorer les événements
+      de type Disease Outbreak News.
+    </p>
+
+    <div class="monitor">
+      <span class="pulse"></span>
+      Surveillance automatique des nouveaux événements 2026
+    </div>
+
+  </div>
+
+  <div id="homeMessage"></div>
+
+  <div class="grid">
+
+    <div class="card">
+      <div class="label">Événements OMS</div>
+      <div id="total" class="stat">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Événements récents</div>
+      <div id="recent" class="stat">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Maladies détectées</div>
+      <div id="diseases" class="stat">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Pays/lieux repérés</div>
+      <div id="locations" class="stat">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Événements 2026</div>
+      <div id="events2026" class="stat">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Nouveaux événements 2026</div>
+      <div id="new2026" class="stat">--</div>
+    </div>
+
+  </div>
+
+  <h2 class="section-title">
+    🆕 Nouveaux événements détectés en 2026
+  </h2>
+
+  <div id="new2026List"></div>
+
+  <h2 class="section-title">
+    Derniers événements
+  </h2>
+
+  <div id="latest"></div>
+
+</section>
+
+
+<section id="mapPage" class="page">
+
+  <div class="hero">
+
+    <h1>🗺️ Carte sanitaire</h1>
+
+    <p>
+      Les positions sont des repérages heuristiques à partir du texte des
+      rapports OMS, pas des coordonnées épidémiologiques officielles.
+    </p>
+
+  </div>
+
+  <div class="toolbar">
+
+    <input
+      id="mapSearch"
+      placeholder="Rechercher un lieu ou une maladie..."
+    >
+
+    <button class="primary" onclick="filterMap()">
+      Rechercher
+    </button>
+
+  </div>
+
+  <div id="map"></div>
+
+</section>
+
+
+<section id="alerts" class="page">
+
+  <div class="hero">
+
+    <h1>🚨 Alertes / événements</h1>
+
+    <p>
+      Recherche locale dans les données récupérées depuis l'OMS.
+    </p>
+
+  </div>
+
+  <div class="toolbar">
+
+    <input
+      id="search"
+      placeholder="Rechercher maladie, pays, titre..."
+    >
+
+    <select id="diseaseFilter">
+      <option value="">Toutes les maladies</option>
+    </select>
+
+  </div>
+
+  <div id="eventList"></div>
+
+</section>
+
+
+<section id="ai" class="page">
+
+  <div class="hero">
+
+    <h1>🤖 Analyse expérimentale</h1>
+
+    <p>
+      Le score affiché ici est une heuristique locale basée sur des mots-clés
+      et des caractéristiques textuelles. Ce n'est pas un modèle médical,
+      ne prédit pas une épidémie et ne remplace pas une analyse officielle.
+    </p>
+
+  </div>
+
+  <div class="card chartbox">
+    <canvas id="aiChart"></canvas>
+  </div>
+
+  <div id="aiList" style="margin-top:15px"></div>
+
+</section>
+
+
+<section id="stats" class="page">
+
+  <div class="hero">
+
+    <h1>📊 Statistiques</h1>
+
+    <p>
+      Répartition des événements par maladie détectée dans les titres
+      et textes OMS.
+    </p>
+
+  </div>
+
+  <div class="card chartbox">
+    <canvas id="diseaseChart"></canvas>
+  </div>
+
+</section>
+
+
+<section id="settings" class="page">
+
+  <div class="hero">
+
+    <h1>⚙️ Paramètres</h1>
+
+    <p>
+      État de la source de données et synchronisation.
+    </p>
+
+  </div>
+
+  <div class="card">
+
+    <p>
+      <strong>Source :</strong>
+      OMS — Disease Outbreak News
+    </p>
+
+    <p style="margin-top:9px">
+      <strong>Endpoint :</strong>
+      /api/hubs/diseaseoutbreaknews
+    </p>
+
+    <p style="margin-top:9px">
+      <strong>Surveillance :</strong>
+      nouveaux événements 2026
+    </p>
+
+    <p style="margin-top:9px">
+      <strong>Intervalle :</strong>
+      toutes les 5 minutes
+    </p>
+
+    <p style="margin-top:9px">
+      <strong>Dernière synchronisation :</strong>
+      <span id="syncTime">--</span>
+    </p>
+
+    <button
+      class="primary"
+      style="margin-top:15px"
+      onclick="loadWHO()"
+    >
+      🔄 Synchroniser maintenant
+    </button>
+
+    <button
+      class="primary"
+      style="margin-top:10px;background:#70404c"
+      onclick="resetSeenEvents()"
+    >
+      🗑️ Réinitialiser les événements vus
+    </button>
+
+  </div>
+
+</section>
+
+</main>
+
+<footer>
+  WORLD HEALTH RADAR AI — 2026
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+const WHO_API =
+  "https://www.who.int/api/hubs/diseaseoutbreaknews";
+
+
+let events = [];
+
+let map = null;
+
+let markers = [];
+
+let aiChart = null;
+
+let diseaseChart = null;
+
+
+/* =========================================================
+   COORDONNÉES DES PAYS
+========================================================= */
+
+const countryCoords = {
+
+  "afghanistan":[33.9391,67.7100],
+  "albania":[41.1533,20.1683],
+  "algeria":[28.0339,1.6596],
+  "angola":[-11.2027,17.8739],
+  "argentina":[-38.4161,-63.6167],
+  "australia":[-25.2744,133.7751],
+  "austria":[47.5162,14.5501],
+  "bangladesh":[23.6850,90.3563],
+  "belgium":[50.5039,4.4699],
+  "benin":[9.3077,2.3158],
+  "brazil":[-14.2350,-51.9253],
+  "burkina faso":[12.2383,-1.5616],
+  "burundi":[-3.3731,29.9189],
+  "cameroon":[7.3697,12.3547],
+  "canada":[56.1304,-106.3468],
+  "central african republic":[6.6111,20.9394],
+  "chad":[15.4542,18.7322],
+  "china":[35.8617,104.1954],
+  "colombia":[4.5709,-74.2973],
+  "congo":[-0.2280,15.8277],
+  "democratic republic of the congo":[-4.0383,21.7587],
+  "democratic republic of congo":[-4.0383,21.7587],
+  "côte d'ivoire":[7.5400,-5.5471],
+  "ivory coast":[7.5400,-5.5471],
+  "drc":[-4.0383,21.7587],
+  "egypt":[26.8206,30.8025],
+  "ethiopia":[9.1450,40.4897],
+  "france":[46.2276,2.2137],
+  "gabon":[-0.8037,11.6094],
+  "gambia":[13.4432,-15.3101],
+  "germany":[51.1657,10.4515],
+  "ghana":[7.9465,-1.0232],
+  "guinea":[9.9456,-9.6966],
+  "haiti":[18.9712,-72.2852],
+  "india":[20.5937,78.9629],
+  "indonesia":[-0.7893,113.9213],
+  "iran":[32.4279,53.6880],
+  "iraq":[33.2232,43.6793],
+  "italy":[41.8719,12.5674],
+  "japan":[36.2048,138.2529],
+  "kenya":[-0.0236,37.9062],
+  "lebanon":[33.8547,35.8623],
+  "liberia":[6.4281,-9.4295],
+  "madagascar":[-18.7669,46.8691],
+  "malawi":[-13.2543,34.3015],
+  "mali":[17.5707,-3.9962],
+  "mauritania":[21.0074,-10.9408],
+  "mexico":[23.6345,-102.5528],
+  "morocco":[31.7917,-7.0926],
+  "mozambique":[-18.6657,35.5296],
+  "niger":[17.6078,8.0817],
+  "nigeria":[9.0820,8.6753],
+  "pakistan":[30.3753,69.3451],
+  "peru":[-9.1900,-75.0152],
+  "philippines":[12.8797,121.7740],
+  "rwanda":[-1.9403,29.8739],
+  "saudi arabia":[23.8859,45.0792],
+  "senegal":[14.4974,-14.4529],
+  "sierra leone":[8.4606,-11.7799],
+  "somalia":[5.1521,46.1996],
+  "south africa":[-30.5595,22.9375],
+  "south korea":[35.9078,127.7669],
+  "sudan":[12.8628,30.2176],
+  "switzerland":[46.8182,8.2275],
+  "tanzania":[-6.3690,34.8888],
+  "togo":[8.6195,0.8248],
+  "tunisia":[33.8869,9.5375],
+  "turkey":[38.9637,35.2433],
+  "uganda":[1.3733,32.2903],
+  "ukraine":[48.3794,31.1656],
+  "united arab emirates":[23.4241,53.8478],
+  "united kingdom":[55.3781,-3.4360],
+  "united states":[37.0902,-95.7129],
+  "usa":[37.0902,-95.7129],
+  "venezuela":[6.4238,-66.5897],
+  "vietnam":[14.0583,108.2772],
+  "zambia":[-13.1339,27.8493],
+  "zimbabwe":[-19.0154,29.1549]
+
+};
+
+
+/* =========================================================
+   MALADIES
+========================================================= */
+
+const diseases = [
+
+  "Ebola",
+  "Marburg",
+  "cholera",
+  "mpox",
+  "monkeypox",
+  "dengue",
+  "malaria",
+  "influenza",
+  "avian influenza",
+  "H5N1",
+  "H1N1",
+  "MERS",
+  "coronavirus",
+  "COVID-19",
+  "covid",
+  "measles",
+  "meningitis",
+  "yellow fever",
+  "polio",
+  "plague",
+  "anthrax",
+  "hepatitis",
+  "HIV",
+  "Zika",
+  "Nipah",
+  "Lassa",
+  "tuberculosis",
+  "rabies",
+  "diphtheria",
+  "pertussis",
+  "West Nile"
+
+];
+
+
+/* =========================================================
+   NETTOYAGE
+========================================================= */
+
+function cleanText(value){
+
+  if(value === null || value === undefined)
+    return "";
+
+  const div = document.createElement("div");
+
+  div.innerHTML = String(value);
+
+  return (div.textContent || div.innerText || "")
+    .replace(/\s+/g," ")
+    .trim();
+
+}
+
+
+function escapeHTML(value){
+
+  return String(value ?? "")
+    .replace(/[&<>"']/g,c => ({
+
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+
+    }[c]));
+
+}
+
+
+function formatDate(value){
+
+  if(!value)
+    return "Date inconnue";
+
+  const d = new Date(value);
+
+  if(Number.isNaN(d.getTime()))
+    return escapeHTML(value);
+
+  return d.toLocaleDateString(
+    "fr-FR",
+    {
+      day:"2-digit",
+      month:"2-digit",
+      year:"numeric"
+    }
+  );
+
+}
+
+
+/* =========================================================
+   DÉTECTION DES MALADIES
+========================================================= */
+
+function detectDiseases(text){
+
+  const lower = text.toLowerCase();
+
+  return diseases.filter(
+    d => lower.includes(d.toLowerCase())
+  );
+
+}
+
+
+/* =========================================================
+   DÉTECTION DES PAYS
+========================================================= */
+
+function detectLocation(text){
+
+  const lower = text.toLowerCase();
+
+  for(const name of Object.keys(countryCoords)){
+
+    if(lower.includes(name))
+      return name;
+
+  }
+
+  return "";
+
+}
+
+
+/* =========================================================
+   RÉSUMÉ
+========================================================= */
+
+function getSummary(item){
+
+  return cleanText(item.Summary) ||
+
+         cleanText(item.Overview) ||
+
+         cleanText(item.Epidemiology) ||
+
+         cleanText(item.Assessment) ||
+
+         cleanText(item.Response) ||
+
+         "Aucun résumé disponible.";
+
+}
+
+
+/* =========================================================
+   SCORE EXPÉRIMENTAL
+========================================================= */
+
+function calculateScore(e){
+
+  const text =
+    `${e.title} ${e.summary}`.toLowerCase();
+
+  let score = 0;
+
+  if(/outbreak|outbreaks|cluster|surge/.test(text))
+    score += 25;
+
+  if(/death|deaths|fatal/.test(text))
+    score += 20;
+
+  if(/confirmed|laboratory-confirmed/.test(text))
+    score += 15;
+
+  if(/transmission|spread/.test(text))
+    score += 15;
+
+  if(/international|global/.test(text))
+    score += 10;
+
+  if(/new case|additional case|new cases/.test(text))
+    score += 10;
+
+  score += Math.min(
+    detectDiseases(text).length * 3,
+    15
+  );
+
+  return Math.min(score,100);
+
+}
+
+
+/* =========================================================
+   NORMALISATION OMS
+========================================================= */
+
+function normalizeData(raw){
+
+  const data =
+    Array.isArray(raw)
+      ? raw
+      : (
+        Array.isArray(raw?.value)
+          ? raw.value
+          : []
+      );
+
+  return data.map((item,index)=>{
+
+    const title =
+      cleanText(
+        item.Title ||
+        item.OverrideTitle ||
+        "Événement sanitaire"
+      );
+
+    const summary =
+      getSummary(item);
+
+    const fullText =
+      `${title} ${summary}`;
+
+    const detected =
+      detectDiseases(fullText);
+
+    return {
+
+      id:
+        item.Id ||
+        item.ID ||
+        item.Guid ||
+        item.ItemId ||
+        String(index),
+
+      title,
+
+      summary,
+
+      date:
+        item.PublicationDate ||
+        item.PublicationDateAndTime ||
+        item.DateCreated ||
+        "",
+
+      formattedDate:
+        item.FormattedDate ||
+        "",
+
+      location:
+        detectLocation(fullText),
+
+      diseases:
+        detected,
+
+      sourceUrl:
+        item.ItemDefaultUrl
+          ? new URL(
+              item.ItemDefaultUrl,
+              "https://www.who.int"
+            ).href
+          : "https://www.who.int/emergencies/disease-outbreak-news",
+
+      score:0
+
+    };
+
+  }).sort(
+    (a,b)=>
+      new Date(b.date)-new Date(a.date)
+  );
+
+}
+
+
+/* =========================================================
+   2026
+========================================================= */
+
+function is2026(e){
+
+  if(!e.date)
+    return false;
+
+  const date =
+    new Date(e.date);
+
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === 2026
+  );
+
+}
+
+
+function get2026Events(){
+
+  return events.filter(is2026);
+
+}
+
+
+/* =========================================================
+   MÉMOIRE DES ÉVÉNEMENTS DÉJÀ VUS
+========================================================= */
+
+const STORAGE_KEY =
+  "WHR_AI_SEEN_EVENTS_2026";
+
+
+function getSeenEvents(){
+
+  try{
+
+    return JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
+
+  }catch(error){
+
+    console.warn(
+      "Impossible de lire les événements vus.",
+      error
+    );
+
+    return [];
+
+  }
+
+}
+
+
+function saveSeenEvents(ids){
+
+  try{
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(ids)
+    );
+
+  }catch(error){
+
+    console.warn(
+      "Impossible de sauvegarder les événements.",
+      error
+    );
+
+  }
+
+}
+
+
+function detectNew2026Events(){
+
+  const events2026 =
+    get2026Events();
+
+  const seen =
+    getSeenEvents();
+
+  return events2026.filter(
+    e => !seen.includes(String(e.id))
+  );
+
+}
+
+
+/* =========================================================
+   PREMIÈRE INITIALISATION
+========================================================= */
+
+function initializeSeenEvents(){
+
+  const existing =
+    localStorage.getItem(STORAGE_KEY);
+
+  if(existing === null){
+
+    const ids =
+      get2026Events()
+        .map(e => String(e.id));
+
+    saveSeenEvents(ids);
+
+    return true;
+
+  }
+
+  return false;
+
+}
+
+
+/* =========================================================
+   MARQUER LES ÉVÉNEMENTS COMME VUS
+========================================================= */
+
+function mark2026EventsAsSeen(){
+
+  const oldIds =
+    getSeenEvents();
+
+  const newIds =
+    get2026Events()
+      .map(e => String(e.id));
+
+  const merged =
+    [...new Set([
+      ...oldIds,
+      ...newIds
+    ])];
+
+  saveSeenEvents(merged);
+
+}
+
+
+/* =========================================================
+   RENDU DES ÉVÉNEMENTS
+========================================================= */
+
+function renderEvent(e,isNew=false){
+
+  const tags =
+    e.diseases.length
+
+      ? e.diseases.map(x =>
+          `<span class="badge">
+            ${escapeHTML(x)}
+           </span>`
+        ).join("")
+
+      : `<span class="badge">
+           Maladie non classifiée
+         </span>`;
+
+
+  const newBadge =
+    isNew
+
+      ? `<span class="badge new">
+           🆕 NOUVEAU 2026
+         </span>`
+
+      : "";
+
+
+  return `
+
+    <article class="event ${isNew ? "new-event" : ""}">
+
+      <h3>
+        ${escapeHTML(e.title)}
+      </h3>
+
+      <div style="margin-bottom:7px">
+        ${newBadge}
+      </div>
+
+      <div class="meta">
+
+        📅 ${formatDate(e.date)}
+
+        ${
+          e.location
+            ? ` • 📍 ${escapeHTML(e.location)}`
+            : ""
+        }
+
+      </div>
+
+      <div>
+        ${tags}
+      </div>
+
+      <p style="margin-top:10px">
+
+        ${escapeHTML(
+          e.summary.slice(0,500)
+        )}
+
+        ${
+          e.summary.length > 500
+            ? "…"
+            : ""
+        }
+
+      </p>
+
+      <a
+        href="${escapeHTML(e.sourceUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="
+          display:inline-block;
+          margin-top:10px;
+          color:#68ddff
+        "
+      >
+        Source OMS ↗
+      </a>
+
+    </article>
+
+  `;
+
+}
+
+
+/* =========================================================
+   NOUVEAUX ÉVÉNEMENTS 2026
+========================================================= */
+
+function renderNew2026Events(){
+
+  const container =
+    document.getElementById(
+      "new2026List"
+    );
+
+  if(!container)
+    return;
+
+
+  const newEvents =
+    detectNew2026Events();
+
+
+  if(!newEvents.length){
+
+    container.innerHTML = `
+
+      <div class="card">
+
+        <strong>
+          🟢 Aucun nouvel événement 2026 détecté.
+        </strong>
+
+        <p
+          class="small"
+          style="margin-top:7px"
+        >
+          La surveillance continue automatiquement.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML = `
+
+    <div class="alert new">
+
+      🆕 <strong>
+      ${newEvents.length}
+      nouvel${newEvents.length > 1 ? "s" : ""}
+      événement${newEvents.length > 1 ? "s" : ""}
+      sanitaire${newEvents.length > 1 ? "s" : ""}
+      détecté${newEvents.length > 1 ? "s" : ""}
+      en 2026.
+      </strong>
+
+      <p
+        class="small"
+        style="margin-top:7px"
+      >
+        Ces événements n'étaient pas présents
+        lors de la dernière surveillance enregistrée
+        sur cet appareil.
+      </p>
+
+    </div>
+
+    ${newEvents
+      .map(e => renderEvent(e,true))
+      .join("")}
+
+  `;
+
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function updateDashboard(){
+
+  document.getElementById("total")
+    .textContent =
+      events.length;
+
+
+  const events2026 =
+    get2026Events();
+
+
+  document.getElementById("events2026")
+    .textContent =
+      events2026.length;
+
+
+  const cutoff =
+    Date.now() -
+    365*24*60*60*1000;
+
+
+  document.getElementById("recent")
+    .textContent =
+      events.filter(e =>
+        new Date(e.date).getTime() >= cutoff
+      ).length;
+
+
+  const diseaseSet =
+    new Set(
+      events.flatMap(
+        e => e.diseases
+      )
+    );
+
+
+  document.getElementById("diseases")
+    .textContent =
+      diseaseSet.size;
+
+
+  const locationSet =
+    new Set(
+      events
+        .map(e => e.location)
+        .filter(Boolean)
+    );
+
+
+  document.getElementById("locations")
+    .textContent =
+      locationSet.size;
+
+
+  const new2026 =
+    detectNew2026Events();
+
+
+  document.getElementById("new2026")
+    .textContent =
+      new2026.length;
+
+
+  document.getElementById("latest")
+    .innerHTML =
+
+      events
+        .slice(0,6)
+        .map(e => renderEvent(e))
+        .join("")
+
+      ||
+
+      `<div class="card">
+        Aucun événement disponible.
+       </div>`;
+
+
+  renderNew2026Events();
+
+}
+
+
+/* =========================================================
+   FILTRE MALADIES
+========================================================= */
+
+function updateDiseaseFilter(){
+
+  const select =
+    document.getElementById(
+      "diseaseFilter"
+    );
+
+  const current =
+    select.value;
+
+
+  const found =
+    [
+      ...new Set(
+        events.flatMap(
+          e => e.diseases
+        )
+      )
+    ].sort();
+
+
+  select.innerHTML =
+    `<option value="">
+       Toutes les maladies
+     </option>`
+
+    +
+
+    found.map(d =>
+      `<option value="${escapeHTML(d)}">
+        ${escapeHTML(d)}
+       </option>`
+    ).join("");
+
+
+  if(found.includes(current))
+    select.value = current;
+
+}
+
+
+/* =========================================================
+   LISTE DES ÉVÉNEMENTS
+========================================================= */
+
+function renderEvents(){
+
+  const query =
+    document
+      .getElementById("search")
+      .value
+      .toLowerCase()
+      .trim();
+
+
+  const disease =
+    document
+      .getElementById("diseaseFilter")
+      .value
+      .toLowerCase();
+
+
+  const filtered =
+    events.filter(e=>{
+
+      const haystack =
+        `${e.title}
+         ${e.summary}
+         ${e.location}
+         ${e.diseases.join(" ")}`
+          .toLowerCase();
+
+
+      return (
+
+        (!query ||
+         haystack.includes(query))
+
+        &&
+
+        (!disease ||
+         e.diseases.some(
+           d =>
+             d.toLowerCase() === disease
+         ))
+
+      );
+
+    });
+
+
+  document.getElementById("eventList")
+    .innerHTML =
+
+      filtered
+        .map(renderEvent)
+        .join("")
+
+      ||
+
+      `<div class="alert">
+        Aucun événement ne correspond
+        à votre recherche.
+       </div>`;
+
+}
+
+
+/* =========================================================
+   IA
+========================================================= */
+
+function renderAI(){
+
+  const scored =
+    events
+      .map(e => ({
+        ...e,
+        score:calculateScore(e)
+      }))
+      .sort(
+        (a,b) =>
+          b.score-a.score
+      )
+      .slice(0,10);
+
+
+  document.getElementById("aiList")
+    .innerHTML =
+
+      scored.map((e,i)=>`
+
+        <div
+          class="card"
+          style="margin-bottom:10px"
+        >
+
+          <strong>
+            ${i+1}.
+            ${escapeHTML(e.title)}
+          </strong>
+
+          <div
+            class="small"
+            style="margin-top:6px"
+          >
+
+            Score expérimental :
+            ${e.score}/100
+
+            —
+            ${formatDate(e.date)}
+
+          </div>
+
+        </div>
+
+      `).join("");
+
+
+  const ctx =
+    document.getElementById(
+      "aiChart"
+    );
+
+
+  if(aiChart)
+    aiChart.destroy();
+
+
+  aiChart =
+    new Chart(ctx,{
+
+      type:"bar",
+
+      data:{
+
+        labels:
+          scored.map(
+            e =>
+              e.title.slice(0,24)
+          ),
+
+        datasets:[{
+
+          label:
+            "Score expérimental",
+
+          data:
+            scored.map(
+              e => e.score
+            )
+
+        }]
+
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false
+
+      }
+
+    });
+
+}
+
+
+/* =========================================================
+   STATISTIQUES
+========================================================= */
+
+function renderStats(){
+
+  const counts = {};
+
+
+  events.forEach(e=>{
+
+    if(e.diseases.length){
+
+      e.diseases.forEach(d => {
+
+        counts[d] =
+          (counts[d] || 0) + 1;
+
+      });
+
+    }else{
+
+      counts["Non classifié"] =
+        (counts["Non classifié"] || 0) + 1;
+
+    }
+
+  });
+
+
+  const entries =
+    Object.entries(counts)
+      .sort(
+        (a,b) => b[1]-a[1]
+      )
+      .slice(0,12);
+
+
+  const ctx =
+    document.getElementById(
+      "diseaseChart"
+    );
+
+
+  if(diseaseChart)
+    diseaseChart.destroy();
+
+
+  diseaseChart =
+    new Chart(ctx,{
+
+      type:"doughnut",
+
+      data:{
+
+        labels:
+          entries.map(
+            x => x[0]
+          ),
+
+        datasets:[{
+
+          data:
+            entries.map(
+              x => x[1]
+            )
+
+        }]
+
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false
+
+      }
+
+    });
+
+}
+
+
+/* =========================================================
+   CARTE
+========================================================= */
+
+function initMap(){
+
+  if(map)
+    return;
+
+
+  map =
+    L.map("map")
+      .setView([10,0],2);
+
+
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+
+      maxZoom:18,
+
+      attribution:
+        "© OpenStreetMap contributors"
+
+    }
+  ).addTo(map);
+
+
+  renderMapMarkers();
+
+}
+
+
+function renderMapMarkers(search=""){
+
+  if(!map)
+    return;
+
+
+  markers.forEach(
+    m => map.removeLayer(m)
+  );
+
+
+  markers = [];
+
+
+  const q =
+    search.toLowerCase().trim();
+
+
+  events.forEach(e=>{
+
+    if(!e.location)
+      return;
+
+
+    const hay =
+      `${e.title}
+       ${e.summary}
+       ${e.location}
+       ${e.diseases.join(" ")}`
+       .toLowerCase();
+
+
+    if(q && !hay.includes(q))
+      return;
+
+
+    const coords =
+      countryCoords[e.location];
+
+
+    if(!coords)
+      return;
+
+
+    const marker =
+      L.marker(coords)
+       .addTo(map);
+
+
+    marker.bindPopup(`
+
+      <strong>
+        ${escapeHTML(e.title)}
+      </strong>
+
+      <br>
+
+      📅 ${formatDate(e.date)}
+
+      <br>
+
+      📍 ${escapeHTML(e.location)}
+
+    `);
+
+
+    markers.push(marker);
+
+  });
+
+}
+
+
+function filterMap(){
+
+  renderMapMarkers(
+    document
+      .getElementById("mapSearch")
+      .value
+  );
+
+}
+
+
+/* =========================================================
+   SYNCHRONISATION OMS
+========================================================= */
+
+async function loadWHO(){
+
+  const status =
+    document.getElementById(
+      "status"
+    );
+
+
+  const homeMessage =
+    document.getElementById(
+      "homeMessage"
+    );
+
+
+  status.textContent =
+    "🟡 Synchronisation OMS...";
+
+
+  homeMessage.innerHTML = "";
+
+
+  try{
+
+    const response =
+      await fetch(
+        WHO_API,
+        {
+          cache:"no-store",
+          headers:{
+            Accept:"application/json"
+          }
+        }
+      );
+
+
+    if(!response.ok){
+
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+
+    }
+
+
+    const raw =
+      await response.json();
+
+
+    const data =
+      Array.isArray(raw)
+
+        ? raw
+
+        : (
+          Array.isArray(raw?.value)
+            ? raw.value
+            : null
+        );
+
+
+    if(!data){
+
+      throw new Error(
+        "Format de données OMS inattendu : le tableau value est absent."
+      );
+
+    }
+
+
+    /*
+      On conserve la liste précédente.
+      Cela permet de comparer l'ancienne
+      synchronisation avec la nouvelle.
+    */
+
+    const previousEvents =
+      [...events];
+
+
+    events =
+      normalizeData(raw);
+
+
+    if(!events.length){
+
+      throw new Error(
+        "L'OMS n'a retourné aucun événement."
+      );
+
+    }
+
+
+    /*
+      Première utilisation :
+      on considère les événements 2026
+      actuellement présents comme déjà connus.
+
+      Les prochaines synchronisations
+      pourront alors détecter uniquement
+      les événements nouvellement apparus.
+    */
+
+    const firstInitialization =
+      initializeSeenEvents();
+
+
+    const new2026Events =
+      firstInitialization
+        ? []
+        : detectNew2026Events();
+
+
+    console.log(
+      "Événements OMS 2026 :",
+      get2026Events()
+    );
+
+
+    console.log(
+      "Nouveaux événements 2026 :",
+      new2026Events
+    );
+
+
+    status.textContent =
+      "🟢 OMS CONNECTÉ";
+
+
+    if(new2026Events.length){
+
+      homeMessage.innerHTML = `
+
+        <div class="alert new">
+
+          🆕 <strong>
+          ${new2026Events.length}
+          nouvel${new2026Events.length > 1 ? "s" : ""}
+          événement${new2026Events.length > 1 ? "s" : ""}
+          2026 détecté${new2026Events.length > 1 ? "s" : ""} !
+          </strong>
+
+          <br><br>
+
+          WORLD HEALTH RADAR AI vient de trouver
+          de nouvelles publications dans les données OMS.
+
+        </div>
+
+      `;
+
+    }else{
+
+      homeMessage.innerHTML = `
+
+        <div class="alert ok">
+
+          ✅ Synchronisation réussie :
+          ${events.length}
+          événements OMS chargés.
+
+          <br>
+
+          🔎 Surveillance 2026 active.
+
+        </div>
+
+      `;
+
+    }
+
+
+    document.getElementById(
+      "syncTime"
+    ).textContent =
+      new Date().toLocaleString(
+        "fr-FR"
+      );
+
+
+    updateDashboard();
+
+    updateDiseaseFilter();
+
+    renderEvents();
+
+    renderAI();
+
+    renderStats();
+
+
+    if(map)
+      renderMapMarkers();
+
+
+    /*
+      Après avoir affiché les nouveaux
+      événements, ils deviennent connus.
+
+      Lors de la prochaine synchronisation,
+      ils ne seront donc plus signalés comme
+      nouveaux.
+    */
+
+    if(new2026Events.length){
+
+      mark2026EventsAsSeen();
+
+      /*
+        On conserve temporairement
+        l'affichage de cette synchronisation.
+      */
+
+      renderNew2026Events();
+
+    }
+
+
+  }catch(error){
+
+    console.error(error);
+
+
+    status.textContent =
+      "🔴 ERREUR OMS";
+
+
+    homeMessage.innerHTML = `
+
+      <div class="alert error">
+
+        <strong>
+          Impossible de récupérer
+          les données de l'OMS.
+        </strong>
+
+        <br><br>
+
+        ${escapeHTML(
+          error.message
+        )}
+
+        <br><br>
+
+        Vérifiez votre connexion Internet.
+
+        Si le navigateur bloque les requêtes
+        depuis un fichier local, ouvrez cette
+        application depuis un hébergement HTTPS.
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+/* =========================================================
+   RÉINITIALISATION
+========================================================= */
+
+function resetSeenEvents(){
+
+  localStorage.removeItem(
+    STORAGE_KEY
+  );
+
+
+  alert(
+    "La mémoire des événements 2026 a été réinitialisée."
+  );
+
+
+  loadWHO();
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+document
+  .querySelectorAll("nav button")
+  .forEach(button=>{
+
+    button.addEventListener(
+      "click",
+      ()=>{
+
+        document
+          .querySelectorAll(
+            "nav button"
+          )
+          .forEach(
+            b =>
+              b.classList.remove(
+                "active"
+              )
+          );
+
+
+        document
+          .querySelectorAll(".page")
+          .forEach(
+            p =>
+              p.classList.remove(
+                "active"
+              )
+          );
+
+
+        button.classList.add(
+          "active"
+        );
+
+
+        const page =
+          document.getElementById(
+            button.dataset.page
+          );
+
+
+        page.classList.add(
+          "active"
+        );
+
+
+        if(
+          button.dataset.page ===
+          "mapPage"
+        ){
+
+          setTimeout(()=>{
+
+            initMap();
+
+            map.invalidateSize();
+
+          },50);
+
+        }
+
+      }
+    );
+
+  });
+
+
+/* =========================================================
+   RECHERCHE
+========================================================= */
+
+document
+  .getElementById("search")
+  .addEventListener(
+    "input",
+    renderEvents
+  );
+
+
+document
+  .getElementById("diseaseFilter")
+  .addEventListener(
+    "change",
+    renderEvents
+  );
+
+
+/* =========================================================
+   PREMIÈRE SYNCHRONISATION
+========================================================= */
+
+loadWHO();
+
+
+/* =========================================================
+   SURVEILLANCE AUTOMATIQUE
+   TOUTES LES 5 MINUTES
+========================================================= */
+
+setInterval(()=>{
+
+  console.log(
+    "🔄 Vérification automatique des nouveaux événements OMS 2026..."
+  );
+
+  loadWHO();
+
+},5 * 60 * 1000);
+
+</script>
+
+</body>
+</html>
